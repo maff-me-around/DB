@@ -12,7 +12,7 @@ let rotationAngle = 0;
 let rotationSpeed = 0.015; 
 
 // --- SETTINGS ---
-let targetDistanceMultiplier = 1.3; 
+let targetDistanceMultiplier = 1.35; 
 
 // UI elements and logs
 let dynamicLogText = "status: ready to launch";
@@ -52,7 +52,7 @@ function setup() {
     pos: anchorPoint.copy(),
     vel: createVector(0, 0),
     acc: createVector(0, 0),
-    r: 20,
+    r: 26,
     friction: 0.985, 
     state: "stationary", 
     capturedBy: null 
