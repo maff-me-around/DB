@@ -11,7 +11,7 @@ let magneticTargets;
 let rotationAngle = 0;
 let rotationSpeed = 0.015; 
 let currentRotationSpeed = 0.015; 
-let winTargetAngle = -1; // Memorizza l'angolo finale in avanti quando vinci
+let winTargetAngle = -1;
 
 // --- SETTINGS ---
 let targetDistanceMultiplier = 1.35; 
@@ -19,7 +19,7 @@ let targetDistanceMultiplier = 1.35;
 // UI elements and logs
 let dynamicLogText = "status: ready to launch";
 let gameResult = ""; 
-let bounceCount = 0; // Variabile per contare i rimbalzi
+let bounceCount = 0;
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -64,7 +64,7 @@ function setup() {
 function draw() {
   background(0); 
 
-  // Gestione dinamica della rotazione
+  // Rotation dynamics
   if (gameResult === "WIN") {
     if (winTargetAngle === -1) {
       winTargetAngle = ceil(rotationAngle / TWO_PI) * TWO_PI;
@@ -183,7 +183,6 @@ function draw() {
       
       if (bouncedOnWall) bounceCount++;
 
-      // MODIFICA QUI: Sensibilità alzata a 0.5 per fermarla non appena sembra visivamente ferma
       if (ball.vel.mag() < 0.5) {
         ball.state = "stopped";
         gameResult = "LOSS";
@@ -298,7 +297,6 @@ function drawBall() {
       fill(255, 0, 0); 
     }
   } else if (ball.state === "stopped") {
-    // La pallina diventa rossa anche quando si ferma a caso senza colpire nulla
     fill(255, 0, 0); 
   } else {
     fill(255);
