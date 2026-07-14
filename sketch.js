@@ -19,7 +19,7 @@ let targetDistanceMultiplier = 1.35;
 // UI elements and logs
 let dynamicLogText = "status: ready to launch";
 let gameResult = ""; 
-let bounceCount = 0; // Variabile per contare i rimbalzi
+let bounceCount = 0; 
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -68,24 +68,24 @@ function draw() {
   if (gameResult === "WIN") {
     // 1. Calcola il target in avanti una sola volta
     if (winTargetAngle === -1) {
-      // ceil() garantisce che il prossimo multiplo di 2PI sia sempre in avanti
       winTargetAngle = ceil(rotationAngle / TWO_PI) * TWO_PI;
     }
     
-    // 2. Calcola la distanza rimanente all'obiettivo
+    // 2. Calcola la distanza rimanente
     let angleRemaining = winTargetAngle - rotationAngle;
     
-    // 3. Applica un rallentamento proporzionale, fermandosi se vicinissimo
     if (angleRemaining <= 0.001) {
-      rotationAngle = winTargetAngle; // Blocca perfettamente sull'asse
+      // Se siamo vicinissimi, blocca l'angolo a zero ed elimina la velocità
+      rotationAngle = winTargetAngle;
       currentRotationSpeed = 0;
     } else {
-      // La velocità decresce man mano che ci si avvicina (effetto ease-out)
-      currentRotationSpeed = angleRemaining * 0.04; 
+      // Riduce la velocità proporzionalmente alla distanza rimanente (creando l'effetto ease)
+      // ma senza mai permettere alla velocità di diventare negativa o andare al contrario!
+      currentRotationSpeed = angleRemaining * 0.05; 
       
-      // Assicura che non si fermi prematuramente prima di raggiungere il target
+      // Assicura una velocità minima per evitare che si pianti prima del traguardo
       if (currentRotationSpeed < 0.0005) {
-         currentRotationSpeed = 0.0005;
+        currentRotationSpeed = 0.0005;
       }
       
       rotationAngle += currentRotationSpeed;
@@ -143,21 +143,21 @@ function draw() {
 
     // Magnetic Attraction & Wobble-to-Stop physics
     for (let target of magneticTargets) {
-      let distToTarget = p5.Vector.dist(ball.pos, target.pos);
+      let d = p5.Vector.dist(ball.pos, target.pos);
 
-      if (distToTarget < magneticForceRadius) {
+      if (d < magneticForceRadius) {
         let forceDir = p5.Vector.sub(target.pos, ball.pos);
         forceDir.normalize();
         
-        let forceMag = map(distToTarget, magneticForceRadius, 0, 0, magnetStrength);
+        let forceMag = map(d, magneticForceRadius, 0, 0, magnetStrength);
         ball.acc.add(forceDir.mult(forceMag));
         
-        if (distToTarget < 40) {
+        if (d < 40) {
           ball.vel.mult(0.92); 
         }
         
         // Final Catch & Win/Loss check
-        if (distToTarget < 12) { 
+        if (d < 12) { 
           ball.capturedBy = target;
           ball.state = "captured";
           
@@ -197,7 +197,7 @@ function draw() {
   drawUI();
 }
 
-// Function to handle collision with rotated rectangles (now returns true if it hits)
+// Function to handle collision with rotated rectangles
 function checkRectCollision(b, center, w, h, angle) {
   let translatedX = b.pos.x - center.x;
   let translatedY = b.pos.y - center.y;
@@ -230,7 +230,7 @@ function checkRectCollision(b, center, w, h, angle) {
      b.pos.add(p5.Vector.mult(normal, overlap));
      
      b.vel.mult(0.7);
-     return true; // Ha colpito la X!
+     return true; 
   }
   return false;
 }
@@ -343,8 +343,8 @@ function mousePressed() {
     ball.state = "launching";
     ball.capturedBy = null; 
     gameResult = ""; 
-    bounceCount = 0; // Resetta i rimbalzi al nuovo lancio
-    winTargetAngle = -1; // Reset target angle
+    bounceCount = 0; 
+    winTargetAngle = -1; // Reset dell'angolo obiettivo al nuovo tiro
   }
 }
 
@@ -374,8 +374,9 @@ function resetGame() {
   ball.capturedBy = null;
   isPulling = false;
   gameResult = "";
-  bounceCount = 0; // Resetta i rimbalzi
-  winTargetAngle = -1; // Reset target angle
+  bounceCount = 0; 
+  winTargetAngle = -1; 
+  currentRotationSpeed = rotationSpeed; 
   dynamicLogText = "status: game reset - ready to launch";
 }
 
