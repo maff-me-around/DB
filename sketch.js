@@ -66,19 +66,29 @@ function draw() {
 
   // Gestione dinamica della rotazione
   if (gameResult === "WIN") {
-    // Se non abbiamo ancora calcolato il punto di stop in avanti, lo calcoliamo ora
+    // 1. Calcola il target in avanti una sola volta
     if (winTargetAngle === -1) {
-      // ceil() arrotonda per eccesso, garantendo che la X continui ad andare AVANTI
       winTargetAngle = ceil(rotationAngle / TWO_PI) * TWO_PI;
     }
     
-    // Ease-out fluido verso l'angolo finale (0.04 regola la morbidezza della frenata)
-    rotationAngle = lerp(rotationAngle, winTargetAngle, 0.04);
+    // 2. Calcola la distanza rimanente
+    let angleRemaining = winTargetAngle - rotationAngle;
     
-    // Quando è praticamente ferma e allineata, blocca l'angolo
-    if (winTargetAngle - rotationAngle < 0.001) {
+    if (angleRemaining <= 0.001) {
+      // Se siamo vicinissimi, blocca l'angolo a zero ed elimina la velocità
       rotationAngle = winTargetAngle;
       currentRotationSpeed = 0;
+    } else {
+      // Riduce la velocità proporzionalmente alla distanza rimanente (creando l'effetto ease)
+      // ma senza mai permettere alla velocità di diventare negativa o andare al contrario!
+      currentRotationSpeed = angleRemaining * 0.05; 
+      
+      // Assicura una velocità minima per evitare che si pianti prima del traguardo
+      if (currentRotationSpeed < 0.0005) {
+        currentRotationSpeed = 0.0005;
+      }
+      
+      rotationAngle += currentRotationSpeed;
     }
   } 
   else if (gameResult === "LOSS") {
@@ -365,7 +375,7 @@ function resetGame() {
   isPulling = false;
   gameResult = "";
   bounceCount = 0; 
-  winTargetAngle = -1; // Reset dell'angolo obiettivo
+  winTargetAngle = -1; 
   currentRotationSpeed = rotationSpeed; 
   dynamicLogText = "status: game reset - ready to launch";
 }
