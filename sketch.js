@@ -10,7 +10,8 @@ let magneticTargets;
 // Rotation variables
 let rotationAngle = 0;
 let rotationSpeed = 0.015; 
-let currentRotationSpeed = 0.015; // Velocità dinamica utilizzata per la rotazione
+let currentRotationSpeed = 0.015; 
+let winTargetAngle = -1; // Memorizza l'angolo finale in avanti quando vinci
 
 // --- SETTINGS ---
 let targetDistanceMultiplier = 1.35; 
@@ -18,7 +19,7 @@ let targetDistanceMultiplier = 1.35;
 // UI elements and logs
 let dynamicLogText = "status: ready to launch";
 let gameResult = ""; 
-let bounceCount = 0; // Variabile per contare i rimbalzi
+let bounceCount = 0; 
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
@@ -63,28 +64,25 @@ function setup() {
 function draw() {
   background(0); 
 
-  // Gestione dinamica della rotazione in base allo stato del gioco
+  // Gestione dinamica della rotazione
   if (gameResult === "WIN") {
-    // Decelera e si allinea perfettamente alla posizione iniziale (angolo 0)
-    currentRotationSpeed *= 0.92; // Rallenta gradualmente
+    // Se non abbiamo ancora calcolato il punto di stop in avanti, lo calcoliamo ora
+    if (winTargetAngle === -1) {
+      // ceil() arrotonda per eccesso, garantendo che la X continui ad andare AVANTI
+      winTargetAngle = ceil(rotationAngle / TWO_PI) * TWO_PI;
+    }
     
-    // Normalizza l'angolo tra 0 e TWO_PI
-    let targetAngle = 0;
-    let currentNormalized = rotationAngle % TWO_PI;
-    if (currentNormalized < 0) currentNormalized += TWO_PI;
+    // Ease-out fluido verso l'angolo finale (0.04 regola la morbidezza della frenata)
+    rotationAngle = lerp(rotationAngle, winTargetAngle, 0.04);
     
-    // Se la velocità è molto bassa, forza l'angolo finale a 0 per un perfetto allineamento
-    if (currentRotationSpeed < 0.0005) {
+    // Quando è praticamente ferma e allineata, blocca l'angolo
+    if (winTargetAngle - rotationAngle < 0.001) {
+      rotationAngle = winTargetAngle;
       currentRotationSpeed = 0;
-      rotationAngle = 0; 
-    } else {
-      // Lerp leggero verso lo zero per una transizione fluida e magnetica
-      rotationAngle += currentRotationSpeed;
-      rotationAngle = lerp(rotationAngle, round(rotationAngle / TWO_PI) * TWO_PI, 0.05);
     }
   } 
   else if (gameResult === "LOSS") {
-    // Decelera dolcemente fino a fermarsi sul posto
+    // Decelera dolcemente sul posto
     currentRotationSpeed *= 0.92;
     if (currentRotationSpeed < 0.0001) {
       currentRotationSpeed = 0;
@@ -92,12 +90,12 @@ function draw() {
     rotationAngle += currentRotationSpeed;
   } 
   else {
-    // Rotazione normale durante il gioco
+    // Rotazione standard durante la partita
     currentRotationSpeed = rotationSpeed;
     rotationAngle += currentRotationSpeed;
   }
 
-  // Update target positions basate sull'angolo di rotazione corrente
+  // Update target positions
   for (let target of magneticTargets) {
     target.pos.x = xSymbol.pos.x + cos(target.baseAngle + rotationAngle) * target.dist;
     target.pos.y = xSymbol.pos.y + sin(target.baseAngle + rotationAngle) * target.dist;
@@ -135,21 +133,21 @@ function draw() {
 
     // Magnetic Attraction & Wobble-to-Stop physics
     for (let target of magneticTargets) {
-      let distToTarget = p5.Vector.dist(ball.pos, target.pos);
+      let d = p5.Vector.dist(ball.pos, target.pos);
 
-      if (distToTarget < magneticForceRadius) {
+      if (d < magneticForceRadius) {
         let forceDir = p5.Vector.sub(target.pos, ball.pos);
         forceDir.normalize();
         
-        let forceMag = map(distToTarget, magneticForceRadius, 0, 0, magnetStrength);
+        let forceMag = map(d, magneticForceRadius, 0, 0, magnetStrength);
         ball.acc.add(forceDir.mult(forceMag));
         
-        if (distToTarget < 40) {
+        if (d < 40) {
           ball.vel.mult(0.92); 
         }
         
         // Final Catch & Win/Loss check
-        if (distToTarget < 12) { 
+        if (d < 12) { 
           ball.capturedBy = target;
           ball.state = "captured";
           
@@ -335,7 +333,8 @@ function mousePressed() {
     ball.state = "launching";
     ball.capturedBy = null; 
     gameResult = ""; 
-    bounceCount = 0; // Resetta i rimbalzi al nuovo lancio
+    bounceCount = 0; 
+    winTargetAngle = -1; // Reset dell'angolo obiettivo al nuovo tiro
   }
 }
 
@@ -365,8 +364,9 @@ function resetGame() {
   ball.capturedBy = null;
   isPulling = false;
   gameResult = "";
-  bounceCount = 0; // Resetta i rimbalzi
-  currentRotationSpeed = rotationSpeed; // Ripristina la velocità di rotazione iniziale
+  bounceCount = 0; 
+  winTargetAngle = -1; // Reset dell'angolo obiettivo
+  currentRotationSpeed = rotationSpeed; 
   dynamicLogText = "status: game reset - ready to launch";
 }
 
