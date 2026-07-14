@@ -10,6 +10,7 @@ let magneticTargets;
 // Rotation variables
 let rotationAngle = 0;
 let rotationSpeed = 0.015; 
+let currentRotationSpeed = 0.015; // Velocità dinamica utilizzata per la rotazione
 
 // --- SETTINGS ---
 let targetDistanceMultiplier = 1.35; 
@@ -62,8 +63,41 @@ function setup() {
 function draw() {
   background(0); 
 
-  // Update rotation and target positions
-  rotationAngle += rotationSpeed;
+  // Gestione dinamica della rotazione in base allo stato del gioco
+  if (gameResult === "WIN") {
+    // Decelera e si allinea perfettamente alla posizione iniziale (angolo 0)
+    currentRotationSpeed *= 0.92; // Rallenta gradualmente
+    
+    // Normalizza l'angolo tra 0 e TWO_PI
+    let targetAngle = 0;
+    let currentNormalized = rotationAngle % TWO_PI;
+    if (currentNormalized < 0) currentNormalized += TWO_PI;
+    
+    // Se la velocità è molto bassa, forza l'angolo finale a 0 per un perfetto allineamento
+    if (currentRotationSpeed < 0.0005) {
+      currentRotationSpeed = 0;
+      rotationAngle = 0; 
+    } else {
+      // Lerp leggero verso lo zero per una transizione fluida e magnetica
+      rotationAngle += currentRotationSpeed;
+      rotationAngle = lerp(rotationAngle, round(rotationAngle / TWO_PI) * TWO_PI, 0.05);
+    }
+  } 
+  else if (gameResult === "LOSS") {
+    // Decelera dolcemente fino a fermarsi sul posto
+    currentRotationSpeed *= 0.92;
+    if (currentRotationSpeed < 0.0001) {
+      currentRotationSpeed = 0;
+    }
+    rotationAngle += currentRotationSpeed;
+  } 
+  else {
+    // Rotazione normale durante il gioco
+    currentRotationSpeed = rotationSpeed;
+    rotationAngle += currentRotationSpeed;
+  }
+
+  // Update target positions basate sull'angolo di rotazione corrente
   for (let target of magneticTargets) {
     target.pos.x = xSymbol.pos.x + cos(target.baseAngle + rotationAngle) * target.dist;
     target.pos.y = xSymbol.pos.y + sin(target.baseAngle + rotationAngle) * target.dist;
@@ -155,7 +189,7 @@ function draw() {
   drawUI();
 }
 
-// Function to handle collision with rotated rectangles (now returns true if it hits)
+// Function to handle collision with rotated rectangles
 function checkRectCollision(b, center, w, h, angle) {
   let translatedX = b.pos.x - center.x;
   let translatedY = b.pos.y - center.y;
@@ -188,7 +222,7 @@ function checkRectCollision(b, center, w, h, angle) {
      b.pos.add(p5.Vector.mult(normal, overlap));
      
      b.vel.mult(0.7);
-     return true; // Ha colpito la X!
+     return true; 
   }
   return false;
 }
@@ -332,6 +366,7 @@ function resetGame() {
   isPulling = false;
   gameResult = "";
   bounceCount = 0; // Resetta i rimbalzi
+  currentRotationSpeed = rotationSpeed; // Ripristina la velocità di rotazione iniziale
   dynamicLogText = "status: game reset - ready to launch";
 }
 
