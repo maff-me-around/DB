@@ -183,8 +183,8 @@ function draw() {
       
       if (bouncedOnWall) bounceCount++;
 
-      // Controllo per pallina ferma (ha esaurito l'energia senza essere catturata)
-      if (ball.vel.mag() < 0.1) {
+      // MODIFICA QUI: Sensibilità alzata a 0.5 per fermarla non appena sembra visivamente ferma
+      if (ball.vel.mag() < 0.5) {
         ball.state = "stopped";
         gameResult = "LOSS";
         dynamicLogText = "status: ball stopped! out of momentum";
@@ -298,7 +298,7 @@ function drawBall() {
       fill(255, 0, 0); 
     }
   } else if (ball.state === "stopped") {
-    // La pallina diventa rossa anche quando si ferma da sola in un punto a caso
+    // La pallina diventa rossa anche quando si ferma a caso senza colpire nulla
     fill(255, 0, 0); 
   } else {
     fill(255);
@@ -340,7 +340,7 @@ function drawUI() {
 // Mouse Controls
 function mousePressed() {
   let dToBall = dist(mouseX, mouseY, ball.pos.x, ball.pos.y);
-  if ((ball.state === "stationary" || ball.state === "captured") && dToBall < ball.r) {
+  if ((ball.state === "stationary" || ball.state === "captured" || ball.state === "stopped") && dToBall < ball.r) {
     isPulling = true;
     ball.state = "launching";
     ball.capturedBy = null; 
